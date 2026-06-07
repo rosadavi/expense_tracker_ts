@@ -9,14 +9,39 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { signupSchema } from "@/schema/signup.schema";
+import { SignUpSchema, signupSchema } from "@/schema/signup.schema";
 import { useForm } from "@tanstack/react-form";
+import { useMutation } from "@tanstack/react-query";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
+
+  const signUpMutation = useMutation({
+    mutationFn: async (data: SignUpSchema) => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        },
+      );
+
+      console.log("Response status:", response);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to sign up");
+      }
+
+      return await response.json();
+    },
+  });
 
   const form = useForm({
     defaultValues: {
@@ -28,8 +53,16 @@ export default function SignUp() {
       onSubmit: signupSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log(value);
-      toast.success("Login registrado com sucesso.");
+      try {
+        const result = await signUpMutation.mutateAsync(value);
+        toast.success(result.message);
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "An error occurred",
+        );
+      } finally {
+        form.reset();
+      }
     },
   });
 

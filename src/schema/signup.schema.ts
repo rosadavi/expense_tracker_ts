@@ -8,3 +8,5 @@ export const signupSchema = z.object({
     .max(15, "Username must be 15 characters or less."),
   password: z.string().min(5, "Password must be at least 5 characters long."),
 });
+
+export type SignUpSchema = z.infer<typeof signupSchema>;
